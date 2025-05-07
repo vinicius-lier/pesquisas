@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, send_file
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, send_file, session, flash
 from src.models.survey import Survey
 from src.mom.message_handler import MessageHandler
 import json
@@ -13,9 +13,15 @@ def show_survey(survey_type):
     if survey_type not in ['vendas', 'administrativo', 'seguros']:
         return redirect(url_for('index'))
     
+    responsavel = request.args.get('responsavel')
+    
     if request.method == 'POST':
         try:
             data = request.get_json() if request.is_json else request.form
+            # Adicionar o nome do responsável nas respostas, se vier na URL
+            if responsavel:
+                data = dict(data)
+                data['responsavel'] = responsavel
             
             # Salvar no banco de dados
             survey = Survey(
@@ -130,4 +136,64 @@ def export_surveys():
         
     except Exception as e:
         print(f"Erro ao exportar pesquisas: {str(e)}")
-        return "Erro ao exportar pesquisas.", 500 
+        return "Erro ao exportar pesquisas.", 500
+
+@survey_bp.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        senha = request.form.get('senha')
+        if senha == 'admin123':
+            session['admin_logged_in'] = True
+            return redirect(url_for('survey.admin_dashboard'))
+        else:
+            flash('Senha incorreta!', 'danger')
+    return render_template('admin_login.html')
+
+@survey_bp.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('survey.admin_login'))
+
+@survey_bp.route('/admin')
+def admin_dashboard():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('survey.admin_login'))
+    pesquisas = Survey.get_all()
+
+    # Listas fixas de responsáveis por grupo
+    vendedores = ['Pedro', 'Adria', 'Danilo', 'Juliano', 'Tatiana', 'Monteiro']
+    administrativo = ['Jessica', 'Milena', 'Maria']
+    promotores = ['Cintia']
+
+    def calcular_desempenho(nomes):
+        resultado = []
+        for nome in nomes:
+            respostas = [p for p in pesquisas if p.responses.get('responsavel', '').strip().lower() == nome.lower()]
+            total = len(respostas)
+            medias = {'q1': 0, 'q2': 0, 'q3': 0, 'q4': 0}
+            if total > 0:
+                for q in ['q1_rating', 'q2_rating', 'q3_rating', 'q4_rating']:
+                    notas = [int(p.responses.get(q, 0)) for p in respostas if p.responses.get(q)]
+                    medias[q[:2]] = round(sum(notas)/len(notas), 2) if notas else 0
+                media_geral = round(sum(medias.values())/4, 2)
+            else:
+                media_geral = 0
+            resultado.append({
+                'nome': nome,
+                'total': total,
+                'media_q1': medias['q1'],
+                'media_q2': medias['q2'],
+                'media_q3': medias['q3'],
+                'media_q4': medias['q4'],
+                'media_geral': media_geral
+            })
+        return resultado
+
+    desempenho_vendedores = calcular_desempenho(vendedores)
+    desempenho_adm = calcular_desempenho(administrativo)
+    desempenho_promotores = calcular_desempenho(promotores)
+
+    return render_template('admin_dashboard.html', pesquisas=pesquisas,
+        desempenho_vendedores=desempenho_vendedores,
+        desempenho_adm=desempenho_adm,
+        desempenho_promotores=desempenho_promotores) 
