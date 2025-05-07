@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ survey_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .alert-review {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">{{ survey_title }}</h1>
+        
+        {% if survey_type == 'vendas' %}
+        <div class="alert-review">
+            <i class="fas fa-exclamation-triangle"></i>
+            Lembrete Importante: Não se esqueça da revisão de 1000km ou 6 meses para sua moto!
+        </div>
+        {% endif %}
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form method="POST" action="{{ form_action }}">
+                    <div class="mb-3">
+                        <label for="client_name" class="form-label">Nome do Cliente:</label>
+                        <input type="text" class="form-control" id="client_name" name="client_name" required>
+                    </div>
+
+                    {% for question in questions %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ question.text }}</label>
+                        <div class="btn-group w-100" role="group">
+                            {% for i in range(1, 6) %}
+                            <input type="radio" class="btn-check" name="{{ question.id }}_rating" id="{{ question.id }}_{{ i }}" value="{{ i }}" required>
+                            <label class="btn btn-outline-primary" for="{{ question.id }}_{{ i }}">{{ i }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="mb-3">
+                        <label for="open_feedback" class="form-label">{{ open_feedback_label }}</label>
+                        <textarea class="form-control" id="open_feedback" name="open_feedback" rows="3" required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Enviar Avaliação</button>
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">Voltar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

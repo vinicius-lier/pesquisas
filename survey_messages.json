@@ -1,0 +1,17 @@
+[
+  {
+    "type": "SURVEY_RESPONSE",
+    "timestamp": "2025-05-07T10:10:49.394251",
+    "payload": {
+      "survey_type": "vendas",
+      "client_name": "Vinicius Oliveira ",
+      "ratings": {
+        "q1": 5,
+        "q2": 5,
+        "q3": 2,
+        "q4": 5
+      },
+      "open_feedback": "Um atendimento muito Aquem \r\n"
+    }
+  }
+]
